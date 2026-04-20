@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import requests
 import json
+import os
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -9,16 +10,15 @@ from googleapiclient.discovery import build
 # CONFIG
 # ==============================
 
-DISCORD_TOKEN = "MTQ5NDg5MjE0MDAwNDY0Mjg5Nw.GnRG_o.6dMgt6FXeFOA4hlf5ZbvZ3X_XeQ4fuTZR_aOs8"
 MODEL = "winston"
 MAX_HISTORY = 6
 
-# Credenciales de Google Calendar
-SCOPES = ['https://www.googleapis.com/auth/calendar']
-SERVICE_ACCOUNT_FILE = 'credentials.json'  # sube este archivo al servidor
+# Token de Discord desde variable de entorno
+DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
 
-creds = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+# Credenciales de Google Calendar desde variable de entorno
+creds_info = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+creds = service_account.Credentials.from_service_account_info(creds_info)
 calendar_service = build('calendar', 'v3', credentials=creds)
 
 user_histories = {}
