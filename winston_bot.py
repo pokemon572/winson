@@ -1,28 +1,3 @@
-import os
-import discord
-from discord.ext import commands
-import json
-import requests
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-
-# Variables de entorno
-DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-GOOGLE_CREDENTIALS = os.environ.get("GOOGLE_CREDENTIALS")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-
-# Credenciales de Google
-creds_info = json.loads(GOOGLE_CREDENTIALS)
-creds = service_account.Credentials.from_service_account_info(creds_info)
-calendar_service = build('calendar', 'v3', credentials=creds)
-
-# Configuración del bot
-intents = discord.Intents.default()
-intents.messages = True
-intents.message_content = True
-bot = commands.Bot(command_prefix="", intents=intents)
-
-# Función que conecta con Groq
 def procesar_mensaje(texto: str) -> str:
     try:
         response = requests.post(
@@ -32,7 +7,7 @@ def procesar_mensaje(texto: str) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "gemma-7b-it",  # modelo activo y soportado
+                "model": "llama-3.1-8b-instant",  # modelo activo y soportado
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
                     {"role": "user", "content": texto}
@@ -51,32 +26,3 @@ def procesar_mensaje(texto: str) -> str:
             return f"Respuesta inesperada de Groq: {data}"
     except Exception as e:
         return f"Error al consultar Groq: {e}"
-
-# Evento: Winston responde a cualquier mensaje
-@bot.event
-async def on_message(message: discord.Message):
-    if message.author == bot.user:
-        return
-
-    async with message.channel.typing():
-        respuesta = procesar_mensaje(message.content)
-
-    await message.channel.send(respuesta)
-    await bot.process_commands(message)
-
-# Comando para crear eventos en Google Calendar
-@bot.command(name="evento")
-async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
-    evento = {
-        'summary': titulo,
-        'start': {'dateTime': inicio},
-        'end': {'dateTime': fin}
-    }
-    calendar_service.events().insert(calendarId='primary', body=evento).execute()
-    await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
-
-# Arranca el bot
-if DISCORD_TOKEN:
-    bot.run(DISCORD_TOKEN)
-else:
-    print("❌ ERROR: La variable DISCORD_TOKEN no está configurada en Railway.")
