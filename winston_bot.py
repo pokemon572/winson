@@ -2,17 +2,14 @@ import os
 import discord
 from discord.ext import commands
 import json
-from openai import OpenAI
+import requests
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 # Variables de entorno
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GOOGLE_CREDENTIALS = os.environ.get("GOOGLE_CREDENTIALS")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# Configura cliente OpenAI
-client = OpenAI(api_key=OPENAI_API_KEY)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # Credenciales de Google
 creds_info = json.loads(GOOGLE_CREDENTIALS)
@@ -25,21 +22,30 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Función que conecta con OpenAI
+# Función que conecta con Groq
 def procesar_mensaje(texto: str) -> str:
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # puedes usar gpt-3.5-turbo si prefieres
-            messages=[
-                {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
-                {"role": "user", "content": texto}
-            ],
-            max_tokens=300,
-            temperature=0.7
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.1-70b-versatile",  # modelo recomendado en Groq
+                "messages": [
+                    {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
+                    {"role": "user", "content": texto}
+                ],
+                "max_tokens": 300,
+                "temperature": 0.7
+            },
+            timeout=60
         )
-        return response.choices[0].message.content.strip()
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        return f"Error al consultar OpenAI: {e}"
+        return f"Error al consultar Groq: {e}"
 
 # Evento: Winston responde a cualquier mensaje
 @bot.event
