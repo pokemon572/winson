@@ -22,9 +22,15 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Función que conecta con Groq
+# Historial de conversación (memoria temporal)
+conversation_history = []
+
+# Función que conecta con Groq con historial
 def procesar_mensaje(texto: str) -> str:
     try:
+        # Guardar mensaje del usuario en historial
+        conversation_history.append({"role": "user", "content": texto})
+
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={
@@ -34,9 +40,8 @@ def procesar_mensaje(texto: str) -> str:
             json={
                 "model": "llama-3.1-8b-instant",  # modelo activo y soportado
                 "messages": [
-                    {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
-                    {"role": "user", "content": texto}
-                ],
+                    {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."}
+                ] + conversation_history,
                 "max_tokens": 300,
                 "temperature": 0.7
             },
@@ -44,7 +49,10 @@ def procesar_mensaje(texto: str) -> str:
         )
         data = response.json()
         if "choices" in data and len(data["choices"]) > 0:
-            return data["choices"][0]["message"]["content"].strip()
+            respuesta = data["choices"][0]["message"]["content"].strip()
+            # Guardar respuesta en historial
+            conversation_history.append({"role": "assistant", "content": respuesta})
+            return respuesta
         elif "error" in data:
             return f"Error de Groq: {data['error'].get('message','desconocido')}"
         else:
@@ -61,7 +69,6 @@ async def on_message(message: discord.Message):
     async with message.channel.typing():
         respuesta = procesar_mensaje(message.content)
 
-    # Fallback automático
     if not respuesta or respuesta.startswith("Error"):
         respuesta = "Lo siento, tuve un problema al procesar tu mensaje."
 
@@ -77,7 +84,7 @@ async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
         'end': {'dateTime': fin}
     }
     calendar_service.events().insert(
-        calendarId='juan.sebastian.caballero.r@gmail.com',  # tu calendario personal
+        calendarId='juan.sebastian.caballero.r@gmail.com',
         body=evento
     ).execute()
     await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
