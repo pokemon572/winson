@@ -6,31 +6,32 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 # Variables de entorno
-DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-GOOGLE_CREDENTIALS = os.environ["GOOGLE_CREDENTIALS"]
+DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
+GOOGLE_CREDENTIALS = os.environ.get("GOOGLE_CREDENTIALS")
 
 # Credenciales de Google
 creds_info = json.loads(GOOGLE_CREDENTIALS)
 creds = service_account.Credentials.from_service_account_info(creds_info)
 calendar_service = build('calendar', 'v3', credentials=creds)
 
-# Configuración del bot
+# Configuración del bot con intents completos
 intents = discord.Intents.default()
 intents.messages = True
-intents.message_content = True  # NECESARIO para leer mensajes
+intents.message_content = True
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Función de ejemplo para procesar mensajes
-def procesar_mensaje(texto):
-    return f"Recibí tu mensaje: {texto}"
+# Función de ejemplo para procesar mensajes (puedes conectar Ollama aquí)
+def procesar_mensaje(texto: str) -> str:
+    # Aquí iría tu lógica de IA
+    return f"Winston pensó y responde: {texto}"
 
 # Evento: Winston responde a cualquier mensaje
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    # Simula que Winston está escribiendo
+    # Simula que Winston está escribiendo ("pensando...")
     async with message.channel.typing():
         respuesta = procesar_mensaje(message.content)
 
@@ -39,7 +40,7 @@ async def on_message(message):
     # MUY IMPORTANTE: permite que los comandos sigan funcionando
     await bot.process_commands(message)
 
-# Ejemplo de comando para crear eventos en Google Calendar
+# Comando para crear eventos en Google Calendar
 @bot.command(name="evento")
 async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
     evento = {
@@ -51,4 +52,7 @@ async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
     await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
 
 # Arranca el bot
-bot.run(DISCORD_TOKEN)
+if DISCORD_TOKEN:
+    bot.run(DISCORD_TOKEN)
+else:
+    print("❌ ERROR: La variable DISCORD_TOKEN no está configurada en Railway.")
