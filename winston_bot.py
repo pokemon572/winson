@@ -32,7 +32,7 @@ def procesar_mensaje(texto: str) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.2-3b-preview",  # modelo activo y recomendado
+                "model": "gemma-7b-it",  # modelo activo y soportado
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
                     {"role": "user", "content": texto}
