@@ -84,7 +84,7 @@ async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
         'end': {'dateTime': fin}
     }
     calendar_service.events().insert(
-        calendarId='juan.sebastian.caballero.r@gmail.com',
+        calendarId='juanse.caballero.r@gmail.com',  # ID correcto de tu calendario
         body=evento
     ).execute()
     await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
@@ -94,7 +94,7 @@ async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
 async def listar_eventos(ctx):
     try:
         eventos = calendar_service.events().list(
-            calendarId='juan.sebastian.caballero.r@gmail.com',
+            calendarId='juanse.caballero.r@gmail.com',
             maxResults=5,
             singleEvents=True,
             orderBy='startTime'
