@@ -61,14 +61,14 @@ async def on_message(message: discord.Message):
     async with message.channel.typing():
         respuesta = procesar_mensaje(message.content)
 
-    # Fallback automático: Winston nunca se queda callado
+    # Fallback automático
     if not respuesta or respuesta.startswith("Error"):
         respuesta = "Lo siento, tuve un problema al procesar tu mensaje."
 
     await message.channel.send(respuesta)
     await bot.process_commands(message)
 
-# Comando para crear eventos en Google Calendar
+# Comando: crear evento en tu calendario personal
 @bot.command(name="evento")
 async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
     evento = {
@@ -76,8 +76,34 @@ async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
         'start': {'dateTime': inicio},
         'end': {'dateTime': fin}
     }
-    calendar_service.events().insert(calendarId='primary', body=evento).execute()
+    calendar_service.events().insert(
+        calendarId='juan.sebastian.caballero.r@gmail.com',  # tu calendario personal
+        body=evento
+    ).execute()
     await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
+
+# Comando: listar próximos eventos
+@bot.command(name="listar_eventos")
+async def listar_eventos(ctx):
+    try:
+        eventos = calendar_service.events().list(
+            calendarId='juan.sebastian.caballero.r@gmail.com',
+            maxResults=5,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        items = eventos.get('items', [])
+        if not items:
+            await ctx.send("No encontré eventos próximos en tu calendario.")
+        else:
+            respuesta = "📅 Próximos eventos:\n"
+            for ev in items:
+                inicio = ev['start'].get('dateTime', ev['start'].get('date'))
+                respuesta += f"- {ev['summary']} (Inicio: {inicio})\n"
+            await ctx.send(respuesta)
+    except Exception as e:
+        await ctx.send(f"Error al acceder al calendario: {e}")
 
 # Arranca el bot
 if DISCORD_TOKEN:
