@@ -1,11 +1,6 @@
-# Discord bot
 discord.py==2.3.2
-
-# Google Calendar API
 google-api-python-client==2.126.0
 google-auth==2.29.0
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
-
-# Requests para Groq API
 requests==2.31.0
