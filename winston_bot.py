@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 import json
-import openai
+from openai import OpenAI
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -11,8 +11,8 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GOOGLE_CREDENTIALS = os.environ.get("GOOGLE_CREDENTIALS")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# Configura la clave de OpenAI
-openai.api_key = OPENAI_API_KEY
+# Configura cliente OpenAI
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Credenciales de Google
 creds_info = json.loads(GOOGLE_CREDENTIALS)
@@ -28,8 +28,8 @@ bot = commands.Bot(command_prefix="", intents=intents)
 # Función que conecta con OpenAI
 def procesar_mensaje(texto: str) -> str:
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # puedes usar gpt-4o-mini o gpt-3.5-turbo
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # puedes usar gpt-3.5-turbo si prefieres
             messages=[
                 {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
                 {"role": "user", "content": texto}
@@ -37,7 +37,7 @@ def procesar_mensaje(texto: str) -> str:
             max_tokens=300,
             temperature=0.7
         )
-        return response.choices[0].message["content"].strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Error al consultar OpenAI: {e}"
 
