@@ -32,7 +32,7 @@ def procesar_mensaje(texto: str) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.1-70b-versatile",  # modelo recomendado en Groq
+                "model": "llama-3.2-3b-preview",  # modelo activo y recomendado
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."},
                     {"role": "user", "content": texto}
@@ -43,7 +43,6 @@ def procesar_mensaje(texto: str) -> str:
             timeout=60
         )
         data = response.json()
-        # Validar estructura antes de acceder
         if "choices" in data and len(data["choices"]) > 0:
             return data["choices"][0]["message"]["content"].strip()
         elif "error" in data:
@@ -59,13 +58,10 @@ async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    # Simula que Winston está escribiendo ("pensando...")
     async with message.channel.typing():
         respuesta = procesar_mensaje(message.content)
 
     await message.channel.send(respuesta)
-
-    # Mantiene los comandos funcionando
     await bot.process_commands(message)
 
 # Comando para crear eventos en Google Calendar
