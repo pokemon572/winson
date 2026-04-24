@@ -42,7 +42,7 @@ def procesar_mensaje(texto: str) -> str:
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."}
                 ] + conversation_history,
-                "max_tokens": 300,
+                "max_tokens": 15000,   # límite ampliado
                 "temperature": 0.7
             },
             timeout=60
@@ -80,8 +80,14 @@ async def on_message(message: discord.Message):
 async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
     evento = {
         'summary': titulo,
-        'start': {'dateTime': inicio},
-        'end': {'dateTime': fin}
+        'start': {
+            'dateTime': inicio,
+            'timeZone': 'America/Bogota'   # zona horaria correcta
+        },
+        'end': {
+            'dateTime': fin,
+            'timeZone': 'America/Bogota'
+        }
     }
     calendar_service.events().insert(
         calendarId='juanse.caballero.r@gmail.com',  # ID correcto de tu calendario
