@@ -41,8 +41,8 @@ def procesar_mensaje(texto: str) -> str:
                 "model": "llama-3.1-8b-instant",  # modelo activo
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."}
-                ] + conversation_history,
-                "max_tokens": 15000,
+                ] + conversation_history[-10:],  # solo últimos 10 mensajes
+                "max_tokens": 2000,  # límite seguro para tu plan
                 "temperature": 0.7
             },
             timeout=60
