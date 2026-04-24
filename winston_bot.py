@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 import json
 import requests
+import dateparser
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -22,13 +23,12 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Historial de conversación (memoria temporal)
+# Historial de conversación
 conversation_history = []
 
-# Función que conecta con Groq con historial
+# Función que conecta con Groq
 def procesar_mensaje(texto: str) -> str:
     try:
-        # Guardar mensaje del usuario en historial
         conversation_history.append({"role": "user", "content": texto})
 
         response = requests.post(
@@ -38,25 +38,25 @@ def procesar_mensaje(texto: str) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.1-8b-instant",  # modelo activo y soportado
+                "model": "llama-3.1-8b-instant",  # modelo activo
                 "messages": [
                     {"role": "system", "content": "Eres Winston, un asistente personal claro y estratégico."}
                 ] + conversation_history,
-                "max_tokens": 15000,   # límite ampliado
+                "max_tokens": 15000,
                 "temperature": 0.7
             },
             timeout=60
         )
+
         data = response.json()
         if "choices" in data and len(data["choices"]) > 0:
             respuesta = data["choices"][0]["message"]["content"].strip()
-            # Guardar respuesta en historial
             conversation_history.append({"role": "assistant", "content": respuesta})
             return respuesta
         elif "error" in data:
             return f"Error de Groq: {data['error'].get('message','desconocido')}"
         else:
-            return f"Respuesta inesperada de Groq: {data}"
+            return "No recibí respuesta válida de Groq."
     except Exception as e:
         return f"Error al consultar Groq: {e}"
 
@@ -65,32 +65,36 @@ def procesar_mensaje(texto: str) -> str:
 async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
-
     async with message.channel.typing():
         respuesta = procesar_mensaje(message.content)
-
-    if not respuesta or respuesta.startswith("Error"):
+    if not respuesta:
         respuesta = "Lo siento, tuve un problema al procesar tu mensaje."
-
     await message.channel.send(respuesta)
     await bot.process_commands(message)
 
 # Comando: crear evento en tu calendario personal
 @bot.command(name="evento")
-async def crear_evento(ctx, titulo: str, inicio: str, fin: str):
+async def crear_evento(ctx, titulo: str, inicio: str, fin: str = None):
+    inicio_dt = dateparser.parse(inicio)
+    fin_dt = dateparser.parse(fin) if fin else None
+
+    if not inicio_dt:
+        await ctx.send("No pude entender la fecha/hora que me diste.")
+        return
+
     evento = {
         'summary': titulo,
         'start': {
-            'dateTime': inicio,
-            'timeZone': 'America/Bogota'   # zona horaria correcta
+            'dateTime': inicio_dt.isoformat(),
+            'timeZone': 'America/Bogota'
         },
         'end': {
-            'dateTime': fin,
+            'dateTime': fin_dt.isoformat() if fin_dt else inicio_dt.isoformat(),
             'timeZone': 'America/Bogota'
         }
     }
     calendar_service.events().insert(
-        calendarId='juanse.caballero.r@gmail.com',  # ID correcto de tu calendario
+        calendarId='juanse.caballero.r@gmail.com',
         body=evento
     ).execute()
     await ctx.send(f"Evento '{titulo}' creado en tu Google Calendar ✅")
@@ -105,7 +109,6 @@ async def listar_eventos(ctx):
             singleEvents=True,
             orderBy='startTime'
         ).execute()
-
         items = eventos.get('items', [])
         if not items:
             await ctx.send("No encontré eventos próximos en tu calendario.")
